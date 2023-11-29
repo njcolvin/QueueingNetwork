@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.List;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -9,7 +8,7 @@ class QueueingSystem {
     // inputs
     float lambda, pH, pL, r2D, r21, r22, mu1, mu2H, mu2L;
     // statistics
-    float exY1H, acY1H, exY1L, acY1L, exY2H, acY2H, exY2L, acY2L, exN1H, acN1H,
+    ArrayList<Float> exY1H, acY1H, exY1L, acY1L, exY2H, acY2H, exY2L, acY2L, exN1H, acN1H,
           exN1L, acN1L, exN2H, acN2H, exN2L, acN2L, exT2H, acT2H, exT2L, acT2L;
 
     QueueingSystem(float lambda, float pH, float r21, float r22, float mu1, float mu2H, float mu2L) {
@@ -103,6 +102,11 @@ class QueueingSystem {
         float clock = 0, rvDepL2;
         ArrayList<Event> elist = new ArrayList<Event>();
         boolean done = false;
+        this.acN1H = new ArrayList<Float>();
+        this.acN1L = new ArrayList<Float>();
+        this.acN2H = new ArrayList<Float>();
+        this.acN2L = new ArrayList<Float>();
+        
 
         int numDepH1 = 0, numDepH2 = 0, numDepL1 = 0, numDepL2 = 0, numDepSys = 0,
             numArrH1 = 0, numArrH2 = 0, numArrL1 = 0, numArrL2 = 0;
@@ -117,6 +121,10 @@ class QueueingSystem {
             areaH2 += H2 * (currEvent.time - clock);
             areaL2 += L2 * (currEvent.time - clock);
             clock = currEvent.time;
+            this.acN1H.add((float)H1);
+            this.acN1L.add((float)L1);
+            this.acN2H.add((float)H2);
+            this.acN2L.add((float)L2);
             // handle event
             switch (currEvent.type) {
                 case ARR: // arrival to queue 1
@@ -255,40 +263,46 @@ class QueueingSystem {
         ArrayList<Float> exT2Ls = new ArrayList<Float>();
         ArrayList<Float> acT2Ls = new ArrayList<Float>();
         
+        ArrayList<ArrayList<Float>> bigList = new ArrayList<ArrayList<Float>>();
         for (int i = 0; i < 10; i++) {
             lambda = i + 1;
             lambdas.add(lambda);
             sys = new QueueingSystem(lambda, pH, r21, r22, mu1, mu2H, mu2L);
             sys.run();
             // TODO: append stats to graphs
+            if (lambda == 10) {
+                bigList.add(sys.acN1H);
+                bigList.add(sys.acN1L);
+                bigList.add(sys.acN2H);
+                bigList.add(sys.acN2L);
+            }
         }
-        ArrayList<ArrayList<Float>> bigList = new ArrayList<ArrayList<Float>>();
-        bigList.add(lambdas);
-        bigList.add(exY1Hs);
-        bigList.add(acY1Hs);
-        bigList.add(exY1Ls);
-        bigList.add(acY1Ls);
-        bigList.add(exY2Hs);
-        bigList.add(acY2Hs);
-        bigList.add(exY2Ls);
-        bigList.add(acY2Ls);
-        bigList.add(exN1Hs);
-        bigList.add(acN1Hs);
-        bigList.add(exN1Ls);
-        bigList.add(acN1Ls);
-        bigList.add(acY1Ls);
-        bigList.add(exN2Hs);
-        bigList.add(acN2Hs);
-        bigList.add(exN2Ls);
-        bigList.add(acN2Ls);
-        bigList.add(exT2Hs);
-        bigList.add(acT2Hs);
-        bigList.add(exT2Ls);
-        bigList.add(acT2Ls);
+        // bigList.add(lambdas);
+        // bigList.add(exY1Hs);
+        // bigList.add(acY1Hs);
+        // bigList.add(exY1Ls);
+        // bigList.add(acY1Ls);
+        // bigList.add(exY2Hs);
+        // bigList.add(acY2Hs);
+        // bigList.add(exY2Ls);
+        // bigList.add(acY2Ls);
+        // bigList.add(exN1Hs);
+        // bigList.add(acN1Hs);
+        // bigList.add(exN1Ls);
+        // bigList.add(acN1Ls);
+        // bigList.add(acY1Ls);
+        // bigList.add(exN2Hs);
+        // bigList.add(acN2Hs);
+        // bigList.add(exN2Ls);
+        // bigList.add(acN2Ls);
+        // bigList.add(exT2Hs);
+        // bigList.add(acT2Hs);
+        // bigList.add(exT2Ls);
+        // bigList.add(acT2Ls);
         // write results to file for python script to plot
         try (PrintWriter writer = new PrintWriter(new FileWriter("results"))) {
-            for (List<Float> floatList : bigList) {
-                for (float number : floatList) {
+            for (ArrayList<Float> floats : bigList) {
+                for (float number : floats) {
                     writer.print(number + " "); // Separate floats within a list with a space
                 }
                 writer.println(); // one list per line
