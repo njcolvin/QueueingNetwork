@@ -1,9 +1,15 @@
-public class Exponential {
-
+public class Generator {
     // generator params
     static long k = 16807, m = Integer.MAX_VALUE, s0 = 1234;
     
-    private static float getUniform() {
+    public static float getExp(float lambda) {
+        // generate uniform RV
+        float u = getUni();
+        // generate exponential RV
+        return (float) (-(1 / lambda) * Math.log(u));
+    }
+    
+    public static float getUni() {
         // s_n = k * s_0 mod m
         long sn = (k * s0) % m;
         // r_n = s_n / m
@@ -11,12 +17,5 @@ public class Exponential {
         // iterate
         s0 = sn;
         return rn;
-    }
-
-    public static float get(float lambda) {
-        // generate uniform RV
-        float u = getUniform();
-        // generate exponential RV
-        return (float) (-(1 / lambda) * Math.log(u));
     }
 }

@@ -85,71 +85,120 @@ class QueueingSystem {
         elist.add(i, e);
     }
 
-    void run() {
-        int H1, H2, L1, L2;
-        float clock = 0;
-        ArrayList<Event> elist;
-        boolean done;
+    void serviceNextCust1(float H1, float L1, float clock, ArrayList<Event> elist) {
+        if (H1 > 0)
+            insertEvent(new Event(EventType.DEPH1, clock + Generator.getExp(this.mu1)), elist);
+        else if (L1 > 0)
+            insertEvent(new Event(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
+    }
 
-        // TODO: run
-        // int numDep = 0, numArr = 0, numBlock = 0;
-        // // area = area under the graph of number of customers in system vs time
-        // float area = 0;
-        // // utilization
-        // this.actualUtil = 0;
-        // // both machines produce components to begin
-        // this.insertEvent(new Event(EventType.ARR1, Exponential.get(this.gamma)));
-        // this.insertEvent(new Event(EventType.ARR2, Exponential.get(this.getLambda())));
-        // while (!this.done) {
-        //     // pop off the event list, update state
-        //     Event currEvent = this.elist.remove(0);
-        //     area += this.N * (currEvent.time - this.clock);
-        //     if (this.N == 1)
-        //         this.actualUtil += (currEvent.time - this.clock) / 2;
-        //     else if (this.N >= 2)
-        //         this.actualUtil += (currEvent.time - this.clock);
-        //     this.clock = currEvent.time;
-        //     // handle event
-        //     switch (currEvent.type) {
-        //         case ARR1:
-        //             if (this.N >= 2) { 
-        //                 // discard i.e. block but dont count for simulation
-        //                 // generate next arrival
-        //                 this.insertEvent(new Event(EventType.ARR1, this.clock + Exponential.get(this.gamma)));
-        //             } else {
-        //                 this.N++;
-        //                 numArr++;
-        //                 // generate next arrival
-        //                 this.insertEvent(new Event(EventType.ARR1, this.clock + Exponential.get(this.gamma)));
-        //                 if (this.N <= this.m) // service
-        //                     this.insertEvent(new Event(EventType.DEP, this.clock + Exponential.get(this.mu)));
-        //             }
-        //             break;
-        //         case ARR2:
-        //             if (this.N == this.K) {
-        //                 // discard i.e. block
-        //                 numBlock++;
-        //                 // generate next arrival
-        //                 this.insertEvent(new Event(EventType.ARR2, this.clock + Exponential.get(this.getLambda())));
-        //             } else {
-        //                 this.N++;
-        //                 numArr++;
-        //                 // generate next arrival
-        //                 this.insertEvent(new Event(EventType.ARR2, this.clock + Exponential.get(this.getLambda())));
-        //                 if (this.N <= this.m) // service
-        //                     this.insertEvent(new Event(EventType.DEP, this.clock + Exponential.get(this.mu)));
-        //             }
-        //             break;
-        //         case DEP:
-        //             numDep++;
-        //             this.N--;
-        //             if (this.N >= this.m) // service next customer
-        //                 this.insertEvent(new Event(EventType.DEP, this.clock + Exponential.get(this.mu)));
-        //             break;
-        //     }
-        //     if (numDep > 100000)
-        //         this.done = true;
-        // }
+    void serviceNextCust2(float H2, float L2, float clock, ArrayList<Event> elist) {
+        if (H2 > 0)
+            insertEvent(new Event(EventType.DEPH2, clock + Generator.getExp(this.mu2H)), elist);
+        else if (L2 > 0)
+            insertEvent(new Event(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
+    }
+
+    void run() {
+        int H1 = 0, H2 = 0, L1 = 0, L2 = 0;
+        float clock = 0, rvDepL2;
+        ArrayList<Event> elist = new ArrayList<Event>();
+        boolean done = false;
+
+        int numDepH1 = 0, numDepH2 = 0, numDepL1 = 0, numDepL2 = 0, numDepSys = 0,
+            numArrH1 = 0, numArrH2 = 0, numArrL1 = 0, numArrL2 = 0;
+        float areaH1 = 0, areaH2 = 0, areaL1 = 0, areaL2 = 0;
+        // insert first arrival
+        insertEvent(new Event(EventType.ARR, Generator.getExp(this.lambda)), elist);
+        while (!done) {
+            // pop off the event list, update state
+            Event currEvent = elist.remove(0);
+            areaH1 += H1 * (currEvent.time - clock);
+            areaH2 += H2 * (currEvent.time - clock);
+            areaL1 += L1 * (currEvent.time - clock);
+            areaH1 += H1 * (currEvent.time - clock);
+            clock = currEvent.time;
+            // handle event
+            switch (currEvent.type) {
+                case ARR: // arrival to queue 1
+                    // determine if high or low priority
+                    if (Generator.getUni() < this.pH) {
+                        // high priority
+                        numArrH1++;
+                        H1++;
+                        if (L1 == 0 && H1 == 1) // arrival to empty queue1, service
+                            insertEvent(new Event(EventType.DEPH1, clock + Generator.getExp(this.mu1)), elist);
+                    } else {
+                        // low priority
+                        numArrL1++;
+                        L1++;
+                        if (H1 == 0 && L1 == 1) // arrival to empty queue1, service
+                            insertEvent(new Event(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
+                    }
+                    // generate next arrival
+                    insertEvent(new Event(EventType.ARR, clock + Generator.getExp(this.lambda)), elist);
+                    break;
+                case DEPH1:
+                    numDepH1++;
+                    H1--;
+                    serviceNextCust1(H1, L1, clock, elist);
+                    numArrH2++;
+                    H2++;
+                    if (L2 == 0 && H2 == 1) // arrival to empty queue2, service
+                        insertEvent(new Event(EventType.DEPH2, clock + Generator.getExp(this.mu2H)), elist);
+                    break;
+                case DEPL1:
+                    numDepL1++;
+                    L1--;
+                    serviceNextCust1(H1, L1, clock, elist);
+                    numArrL2++;
+                    L2++;
+                    if (H2 == 0 && L2 == 1) // arrival to empty queue2, service
+                        insertEvent(new Event(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
+                    break;
+                case DEPH2:
+                    numDepH2++;
+                    H2--;
+                    serviceNextCust2(H2, L2, clock, elist);
+                    numDepSys++;
+                    break;
+                case DEPL2:
+                    numDepL2++;
+                    L2--;
+                    serviceNextCust2(H2, L2, clock, elist);
+                    // determine destination
+                    rvDepL2 = Generator.getUni();
+                    if (rvDepL2 < this.r2D) {
+                        // depart system
+                        numDepSys++;
+                    } else if (rvDepL2 < this.r2D + this.r21) {
+                        // transfer to queue1
+                        numArrL1++;
+                        L1++;
+                        if (H1 == 0 && L1 == 1) // arrival to empty queue1, service
+                            insertEvent(new Event(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
+                    } else {
+                        // transfer to queue2
+                        numArrL2++;
+                        L2++;
+                        if (H2 == 0 && L2 == 1) // arrival to empty queue2, service
+                            insertEvent(new Event(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
+                    }
+                    break;
+
+            }
+            if (numDepSys > 500000)
+                done = true;
+        }
+
+        System.out.println(numArrH1);
+        System.out.println(numArrL1);
+        System.out.println(numArrH2);
+        System.out.println(numArrL2);
+        System.out.println(numDepH1);
+        System.out.println(numDepL1);
+        System.out.println(numDepH2);
+        System.out.println(numDepL2);
 
         // TODO: print results
         // System.out.println("ρ = " + this.rho);
@@ -180,18 +229,18 @@ class QueueingSystem {
     }
 
     public static void main(String[] args) {
-        if (args.length != 8)
-            throw new IllegalArgumentException("usage: java QueueingSystem p_H p_L r_2d r_21 r_22 µ_1 µ_2H µ_2L");
+        if (args.length != 6)
+            throw new IllegalArgumentException("usage: java QueueingSystem p_H r_21 r_22 µ_1 µ_2H µ_2L");
 
         float pH, pL, r2D, r21, r22, mu1, mu2H, mu2L;
         pH = Float.parseFloat(args[0]);
-        pL = Float.parseFloat(args[1]);
-        r2D = Float.parseFloat(args[2]);
-        r21 = Float.parseFloat(args[3]);
-        r22 = Float.parseFloat(args[4]);
-        mu1 = Float.parseFloat(args[5]);
-        mu2H = Float.parseFloat(args[6]);
-        mu2L = Float.parseFloat(args[7]);
+        pL = 1.0f - pH;
+        r21 = Float.parseFloat(args[1]);
+        r22 = Float.parseFloat(args[2]);
+        r2D = 1.0f - r21 - r22;
+        mu1 = Float.parseFloat(args[3]);
+        mu2H = Float.parseFloat(args[4]);
+        mu2L = Float.parseFloat(args[5]);
 
         QueueingSystem sys;
         float lambda;
@@ -223,6 +272,7 @@ class QueueingSystem {
             lambdas.add(lambda);
             sys = new QueueingSystem(lambda, pH, pL, r2D, r21, r22, mu1, mu2H, mu2L);
             sys.run();
+            System.out.println();
             // TODO: append stats to graphs
         }
         ArrayList<ArrayList<Float>> bigList = new ArrayList<ArrayList<Float>>();
