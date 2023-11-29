@@ -12,12 +12,11 @@ class QueueingSystem {
     float exY1H, acY1H, exY1L, acY1L, exY2H, acY2H, exY2L, acY2L, exN1H, acN1H,
           exN1L, acN1L, exN2H, acN2H, exN2L, acN2L, exT2H, acT2H, exT2L, acT2L;
 
-    QueueingSystem(float lambda, float pH, float pL, float r2D, float r21,
-                   float r22, float mu1, float mu2H, float mu2L) {
+    QueueingSystem(float lambda, float pH, float r21, float r22, float mu1, float mu2H, float mu2L) {
         this.lambda = lambda;
         this.pH = pH;
-        this.pL = pL;
-        this.r2D = r2D;
+        this.pL = 1.0f - pH;
+        this.r2D = 1.0f - r21 - r22;
         this.r21 = r21;
         this.r22 = r22;
         this.mu1 = mu1;
@@ -114,9 +113,9 @@ class QueueingSystem {
             // pop off the event list, update state
             Event currEvent = elist.remove(0);
             areaH1 += H1 * (currEvent.time - clock);
-            areaH2 += H2 * (currEvent.time - clock);
             areaL1 += L1 * (currEvent.time - clock);
-            areaH1 += H1 * (currEvent.time - clock);
+            areaH2 += H2 * (currEvent.time - clock);
+            areaL2 += L2 * (currEvent.time - clock);
             clock = currEvent.time;
             // handle event
             switch (currEvent.type) {
@@ -191,53 +190,42 @@ class QueueingSystem {
                 done = true;
         }
 
-        System.out.println(numArrH1);
-        System.out.println(numArrL1);
-        System.out.println(numArrH2);
-        System.out.println(numArrL2);
-        System.out.println(numDepH1);
-        System.out.println(numDepL1);
-        System.out.println(numDepH2);
-        System.out.println(numDepL2);
-
-        // TODO: print results
-        // System.out.println("ρ = " + this.rho);
+        // TODO: print state probabilities and expected results
+        System.out.println("λ = " + this.lambda);
         // System.out.println(" State Probabilities");
         // for (int i = 0; i <= this.K; i++)
         //     System.out.println("  p(" + i + ") = " + this.stateProbs.get(i));
 
+        // E[Y] = # arrs / t_end
+        System.out.println(" Actual E[Y_H1] = " + numArrH1 / clock);
+        System.out.println(" Actual E[Y_L1] = " + numArrL1 / clock);
+        System.out.println(" Actual E[Y_H2] = " + numArrH2 / clock);
+        System.out.println(" Actual E[Y_L2] = " + numArrL2 / clock);
+
         // // E[n] = area / t_end
         // System.out.println(" Expected E[n] = " + this.expectedNumCust);
         // this.actualNumCust = area / this.clock;
-        // System.out.println(" Actual E[n]   = " + this.actualNumCust);
+        System.out.println(" Actual E[N_H1] = " + areaH1 / clock);
+        System.out.println(" Actual E[N_L1] = " + areaL1 / clock);
+        System.out.println(" Actual E[N_H2] = " + areaH2 / clock);
+        System.out.println(" Actual E[N_L2] = " + areaL2 / clock);
 
         // // E[𝜏] = area / total # arrs
         // System.out.println(" Expected E[𝜏] = " + this.expectedTimeCust);
         // this.actualTimeCust = area / numArr;
-        // System.out.println(" Actual E[𝜏]   = " + this.actualTimeCust);
-        
-        // // P(block) = total # blocks / total # arrs
-        // System.out.println(" Expected P(block) = " + this.expectedProbBlock);
-        // this.actualProbBlock = (float) numBlock / numArr;
-        // System.out.println(" Actual P(block)   = " + this.actualProbBlock);
-
-        // // Utilization computed similarly to area
-        // System.out.println(" Expected Utilization = " + this.expectedUtil);
-        // this.actualUtil /= this.clock;
-        // System.out.println(" Actual Utilization   = " + this.actualUtil);
-        // System.out.println();
+        System.out.println(" Actual E[𝜏_H2] = " + areaH2 / numArrH2);
+        System.out.println(" Actual E[𝜏_L2] = " + areaL2 / numArrL2);
+        System.out.println();
     }
 
     public static void main(String[] args) {
         if (args.length != 6)
             throw new IllegalArgumentException("usage: java QueueingSystem p_H r_21 r_22 µ_1 µ_2H µ_2L");
 
-        float pH, pL, r2D, r21, r22, mu1, mu2H, mu2L;
+        float pH, r21, r22, mu1, mu2H, mu2L;
         pH = Float.parseFloat(args[0]);
-        pL = 1.0f - pH;
         r21 = Float.parseFloat(args[1]);
         r22 = Float.parseFloat(args[2]);
-        r2D = 1.0f - r21 - r22;
         mu1 = Float.parseFloat(args[3]);
         mu2H = Float.parseFloat(args[4]);
         mu2L = Float.parseFloat(args[5]);
@@ -270,9 +258,8 @@ class QueueingSystem {
         for (int i = 0; i < 10; i++) {
             lambda = i + 1;
             lambdas.add(lambda);
-            sys = new QueueingSystem(lambda, pH, pL, r2D, r21, r22, mu1, mu2H, mu2L);
+            sys = new QueueingSystem(lambda, pH, r21, r22, mu1, mu2H, mu2L);
             sys.run();
-            System.out.println();
             // TODO: append stats to graphs
         }
         ArrayList<ArrayList<Float>> bigList = new ArrayList<ArrayList<Float>>();
