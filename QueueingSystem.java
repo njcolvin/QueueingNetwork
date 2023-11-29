@@ -181,7 +181,7 @@ class QueueingSystem {
 
     public static void main(String[] args) {
         if (args.length != 8)
-            throw new IllegalArgumentException("usage: java QueueingSystem K m µ");
+            throw new IllegalArgumentException("usage: java QueueingSystem p_H p_L r_2d r_21 r_22 µ_1 µ_2H µ_2L");
 
         float pH, pL, r2D, r21, r22, mu1, mu2H, mu2L;
         pH = Float.parseFloat(args[0]);
