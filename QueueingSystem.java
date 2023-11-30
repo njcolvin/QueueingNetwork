@@ -299,7 +299,7 @@ class QueueingSystem {
         bigList.add(exT2Ls);
         bigList.add(acT2Ls);
         // write states to file for python script to plot
-        try (PrintWriter writer = new PrintWriter(new FileWriter("states"))) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter("data/states"))) {
             for (ArrayList<Float> floats : states) {
                 for (float number : floats) {
                     writer.print(number + " "); // Separate floats within a list with a space
@@ -310,7 +310,7 @@ class QueueingSystem {
             e.printStackTrace();
         }
         // write results to file for python script to plot
-        try (PrintWriter writer = new PrintWriter(new FileWriter("results"))) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter("data/results"))) {
             for (ArrayList<Float> floats : bigList) {
                 for (float number : floats) {
                     writer.print(number + " "); // Separate floats within a list with a space

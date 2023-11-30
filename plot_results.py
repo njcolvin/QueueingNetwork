@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-with open('results', 'r') as file:
+with open('data/results', 'r') as file:
     lines = file.readlines()
 
 float_lists = []
@@ -62,10 +62,22 @@ fig, ax = plt.subplots()
 
 ax.scatter(lambdas, exN1Hs, label='Expected Number of High Priority Customers in Queue 1', color='red', marker='o')
 ax.scatter(lambdas, acN1Hs, label='Actual Number of High Priority Customers in Queue 1', color='blue', marker='s')
-ax.scatter(lambdas, exN2Hs, label='Expected Number of High Priority Customers in Queue 2', color='darkred', marker='o')
-ax.scatter(lambdas, acN2Hs, label='Actual Number of High Priority Customers in Queue 2', color='darkblue', marker='s')
+ax.scatter(lambdas, exN1Ls, label='Expected Number of Low Priority Customers in Queue 1', color='darkred', marker='o')
+ax.scatter(lambdas, acN1Ls, label='Actual Number of Low Priority Customers in Queue 1', color='darkblue', marker='s')
 ax.set_xlabel('λ')
-ax.set_ylabel('E[N]')
+ax.set_ylabel('E[N_1]')
+ax.legend()
+
+plt.show()
+
+fig, ax = plt.subplots()
+
+ax.scatter(lambdas, exN2Hs, label='Expected Number of High Priority Customers in Queue 2', color='red', marker='o')
+ax.scatter(lambdas, acN2Hs, label='Actual Number of High Priority Customers in Queue 2', color='blue', marker='s')
+ax.scatter(lambdas, exN2Ls, label='Expected Number of Low Priority Customers in Queue 2', color='darkred', marker='o')
+ax.scatter(lambdas, acN2Ls, label='Actual Number of Low Priority Customers in Queue 2', color='darkblue', marker='s')
+ax.set_xlabel('λ')
+ax.set_ylabel('E[N_2]')
 ax.legend()
 
 plt.show()
@@ -77,7 +89,7 @@ ax.scatter(lambdas, acT2Hs, label='Actual Time of High Priority Customers in Que
 ax.scatter(lambdas, exT2Ls, label='Expected Time of Low Priority Customers in Queue 2', color='darkred', marker='o')
 ax.scatter(lambdas, acT2Ls, label='Actual Time of Low Priority Customers in Queue 2', color='darkblue', marker='s')
 ax.set_xlabel('λ')
-ax.set_ylabel('E[𝜏]')
+ax.set_ylabel('E[𝜏_2]')
 ax.legend()
 
 plt.show()

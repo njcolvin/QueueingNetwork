@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
-with open('states', 'r') as file:
+with open('data/states', 'r') as file:
     lines = file.readlines()
 
 points = []
