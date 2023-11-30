@@ -8,8 +8,10 @@ class QueueingSystem {
     // inputs
     float lambda, pH, pL, r2D, r21, r22, mu1, mu2H, mu2L;
     // statistics
-    ArrayList<Float> exY1H, acY1H, exY1L, acY1L, exY2H, acY2H, exY2L, acY2L, exN1H, acN1H,
-          exN1L, acN1L, exN2H, acN2H, exN2L, acN2L, exT2H, acT2H, exT2L, acT2L;
+    float exTheta1H, acTheta1H, exTheta1L, acTheta1L, exTheta2H, acTheta2H, exTheta2L, acTheta2L,
+          exN1H, acN1H, exN1L, acN1L, exN2H, acN2H, exN2L, acN2L, exT2H, acT2H, exT2L, acT2L;
+    // state vectors
+    ArrayList<Float> simN1Hs, simN1Ls, simN2Hs, simN2Ls;
 
     QueueingSystem(float lambda, float pH, float r21, float r22, float mu1, float mu2H, float mu2L) {
         this.lambda = lambda;
@@ -21,59 +23,24 @@ class QueueingSystem {
         this.mu1 = mu1;
         this.mu2H = mu2H;
         this.mu2L = mu2L;
-        this.computeStateProbs();
         this.computeMetrics();
     }
 
-    // TODO: compute state probabilities
-    void computeStateProbs() {
-        ArrayList<Float> stateProbs;
-        ArrayList<Float> coefficients = new ArrayList<Float>();
-        // float numerator = this.getLambda() + this.gamma, denominator = this.mu;
-        // // both machines working, p(1) = p(0) * (λ + γ) / µ
-        // coefficients.add(numerator / denominator); 
-        // numerator *= this.getLambda() + this.gamma;
-        // // multiply µ by number of workers
-        // denominator *= this.m > 1 ? 2 * this.mu : this.mu;
-        // // both machines working, p(2) = p(0) * (λ + γ)^2 / if(m > 1, 2µ^2, µ^2)
-        // coefficients.add(numerator / denominator);
-        // for (int i = 2; i < this.K; i++) {
-        //     // only machine 2 working
-        //     numerator *= this.getLambda();
-        //     denominator *= this.m > i ? i * this.mu : this.m * this.mu;
-        //     // for i >= 2, p(i) = p(0) * coef(p(i-1)) * λ / if(m > i, iµ, mµ)
-        //     coefficients.add(numerator / denominator); 
-        // }
-        // // compute p(0) = 1 / (1 + (λ + γ) / µ + (λ + γ)^2 / if(m > 1, 2µ^2, µ^2) + ...)
-        // float sum = 1;
-        // for (float f : coefficients)
-        //     sum += f;
-        // this.stateProbs.add(1 / sum);
-        // // compute p(1)..p(K)
-        // for (int i = 0; i < coefficients.size(); i++)
-        //     this.stateProbs.add(coefficients.get(i) * this.stateProbs.get(0));
-    }
-
-    // TODO: compute metrics
     void computeMetrics() {
-        // // E[n] = i * p(i) for i = 0..K
-        // this.expectedNumCust = 0;
-        // for (int i = 0; i <= this.K; i++)
-        //     expectedNumCust += i * this.stateProbs.get(i);
-        // // E[𝜏] = E[n] / λ_avg (Little's Law)
-        // // λ_avg = ((λ + γ)p(0) + (λ + γ)p(1) + λp(2) + ... + λp(k))
-        // float lambdaAvg = 0;
-        // lambdaAvg += (this.getLambda() + this.gamma) * this.stateProbs.get(0);
-        // lambdaAvg += (this.getLambda() + this.gamma) * this.stateProbs.get(1);
-        // for (int i = 2; i <= this.K; i++)
-        //     lambdaAvg += this.getLambda() * this.stateProbs.get(i);
-        // this.expectedTimeCust = this.expectedNumCust / lambdaAvg;
-        // // P(block) = λp(k) / λ_avg
-        // this.expectedProbBlock = this.getLambda() * this.stateProbs.get(this.K) / lambdaAvg;
-        // // Utilization = 1/2 * p(1) + p(2) + p(3) + p(4)
-        // this.expectedUtil = this.stateProbs.get(1) / 2;
-        // for (int i = 2; i <= this.K; i++)
-        //     this.expectedUtil += this.stateProbs.get(i);
+        this.exTheta1H = this.lambda * this.pH;
+        this.exTheta2L = this.lambda * this.pL / this.r2D;
+        this.exTheta1L = this.lambda * this.pL + this.exTheta2L * this.r21;
+        this.exTheta2H = this.exTheta1H;
+        float rho1H = this.exTheta1H / this.mu1;
+        float rho1L = this.exTheta1L / this.mu1;
+        float rho2H = this.exTheta2H / this.mu2H;
+        float rho2L = this.exTheta2L / this.mu2L;
+        this.exN1H = rho1H / (1 - rho1H);
+        this.exN1L = rho1L / (1 - rho1L);
+        this.exN2H = rho2H / (1 - rho2H);
+        this.exN2L = rho2L / (1 - rho2L);
+        this.exT2H = this.exN2H / this.exTheta2H;
+        this.exT2L = this.exN2L / this.exTheta2L;
     }
 
     void insertEvent(Event e, ArrayList<Event> elist) {
@@ -102,10 +69,10 @@ class QueueingSystem {
         float clock = 0, rvDepL2;
         ArrayList<Event> elist = new ArrayList<Event>();
         boolean done = false;
-        this.acN1H = new ArrayList<Float>();
-        this.acN1L = new ArrayList<Float>();
-        this.acN2H = new ArrayList<Float>();
-        this.acN2L = new ArrayList<Float>();
+        this.simN1Hs = new ArrayList<Float>();
+        this.simN1Ls = new ArrayList<Float>();
+        this.simN2Hs = new ArrayList<Float>();
+        this.simN2Ls = new ArrayList<Float>();
         
 
         int numDepH1 = 0, numDepH2 = 0, numDepL1 = 0, numDepL2 = 0, numDepSys = 0,
@@ -121,10 +88,10 @@ class QueueingSystem {
             areaH2 += H2 * (currEvent.time - clock);
             areaL2 += L2 * (currEvent.time - clock);
             clock = currEvent.time;
-            this.acN1H.add((float)H1);
-            this.acN1L.add((float)L1);
-            this.acN2H.add((float)H2);
-            this.acN2L.add((float)L2);
+            this.simN1Hs.add((float)H1);
+            this.simN1Ls.add((float)L1);
+            this.simN2Hs.add((float)H2);
+            this.simN2Ls.add((float)L2);
             // handle event
             switch (currEvent.type) {
                 case ARR: // arrival to queue 1
@@ -198,31 +165,42 @@ class QueueingSystem {
                 done = true;
         }
 
-        // TODO: print state probabilities and expected results
         System.out.println("λ = " + this.lambda);
-        // System.out.println(" State Probabilities");
-        // for (int i = 0; i <= this.K; i++)
-        //     System.out.println("  p(" + i + ") = " + this.stateProbs.get(i));
+        // E[θ] = # deps / t_end
+        this.acTheta1H = numDepH1 / clock;
+        this.acTheta1L = numDepL1 / clock;
+        this.acTheta2H = numDepH2 / clock;
+        this.acTheta2L = numDepL2 / clock;
+        System.out.println(" Expected E[θ_H1] = " + this.exTheta1H);
+        System.out.println(" Actual E[θ_H1]   = " + this.acTheta1H);
+        System.out.println(" Expected E[θ_L1] = " + this.exTheta1L);
+        System.out.println(" Actual E[θ_L1]   = " + this.acTheta1L);
+        System.out.println(" Expected E[θ_H2] = " + this.exTheta2H);
+        System.out.println(" Actual E[θ_H2]   = " + this.acTheta2H);
+        System.out.println(" Expected E[θ_L2] = " + this.exTheta2L);
+        System.out.println(" Actual E[θ_L2]   = " + this.acTheta2L);
 
-        // E[Y] = # arrs / t_end
-        System.out.println(" Actual E[Y_H1] = " + numArrH1 / clock);
-        System.out.println(" Actual E[Y_L1] = " + numArrL1 / clock);
-        System.out.println(" Actual E[Y_H2] = " + numArrH2 / clock);
-        System.out.println(" Actual E[Y_L2] = " + numArrL2 / clock);
+        // E[n] = area / t_end
+        this.acN1H = areaH1 / clock;
+        this.acN1L = areaL1 / clock;
+        this.acN2H = areaH2 / clock;
+        this.acN2L = areaL2 / clock;
+        System.out.println(" Expected E[N_H1] = " + this.exN1H);
+        System.out.println(" Actual E[N_H1]   = " + this.acN1H);
+        System.out.println(" Expected E[N_L1] = " + this.exN1L);
+        System.out.println(" Actual E[N_L1]   = " + this.acN1L);
+        System.out.println(" Expected E[N_H2] = " + this.exN2H);
+        System.out.println(" Actual E[N_H2]   = " + this.acN2H);
+        System.out.println(" Expected E[N_L2] = " + this.exN2L);
+        System.out.println(" Actual E[N_L2]   = " + this.acN2L);
 
-        // // E[n] = area / t_end
-        // System.out.println(" Expected E[n] = " + this.expectedNumCust);
-        // this.actualNumCust = area / this.clock;
-        System.out.println(" Actual E[N_H1] = " + areaH1 / clock);
-        System.out.println(" Actual E[N_L1] = " + areaL1 / clock);
-        System.out.println(" Actual E[N_H2] = " + areaH2 / clock);
-        System.out.println(" Actual E[N_L2] = " + areaL2 / clock);
-
-        // // E[𝜏] = area / total # arrs
-        // System.out.println(" Expected E[𝜏] = " + this.expectedTimeCust);
-        // this.actualTimeCust = area / numArr;
-        System.out.println(" Actual E[𝜏_H2] = " + areaH2 / numArrH2);
-        System.out.println(" Actual E[𝜏_L2] = " + areaL2 / numArrL2);
+        // E[𝜏] = area / total # arrs
+        this.acT2H = areaH2 / numArrH2;
+        this.acT2L = areaL2 / numArrL2;
+        System.out.println(" Expected E[𝜏_H2] = " + this.exT2H);
+        System.out.println(" Actual E[𝜏_H2]   = " + this.acT2H);
+        System.out.println(" Expected E[𝜏_L2] = " + this.exT2L);
+        System.out.println(" Actual E[𝜏_L2]   = " + this.acT2L);
         System.out.println();
     }
 
@@ -242,14 +220,14 @@ class QueueingSystem {
         float lambda;
         // for graphs
         ArrayList<Float> lambdas = new ArrayList<Float>();
-        ArrayList<Float> exY1Hs = new ArrayList<Float>();
-        ArrayList<Float> acY1Hs = new ArrayList<Float>();
-        ArrayList<Float> exY1Ls = new ArrayList<Float>();
-        ArrayList<Float> acY1Ls = new ArrayList<Float>();
-        ArrayList<Float> exY2Hs = new ArrayList<Float>();
-        ArrayList<Float> acY2Hs = new ArrayList<Float>();
-        ArrayList<Float> exY2Ls = new ArrayList<Float>();
-        ArrayList<Float> acY2Ls = new ArrayList<Float>();
+        ArrayList<Float> exTheta1Hs = new ArrayList<Float>();
+        ArrayList<Float> acTheta1Hs = new ArrayList<Float>();
+        ArrayList<Float> exTheta1Ls = new ArrayList<Float>();
+        ArrayList<Float> acTheta1Ls = new ArrayList<Float>();
+        ArrayList<Float> exTheta2Hs = new ArrayList<Float>();
+        ArrayList<Float> acTheta2Hs = new ArrayList<Float>();
+        ArrayList<Float> exTheta2Ls = new ArrayList<Float>();
+        ArrayList<Float> acTheta2Ls = new ArrayList<Float>();
         ArrayList<Float> exN1Hs = new ArrayList<Float>();
         ArrayList<Float> acN1Hs = new ArrayList<Float>();
         ArrayList<Float> exN1Ls = new ArrayList<Float>();
@@ -263,42 +241,74 @@ class QueueingSystem {
         ArrayList<Float> exT2Ls = new ArrayList<Float>();
         ArrayList<Float> acT2Ls = new ArrayList<Float>();
         
+        ArrayList<ArrayList<Float>> states = new ArrayList<ArrayList<Float>>();
         ArrayList<ArrayList<Float>> bigList = new ArrayList<ArrayList<Float>>();
         for (int i = 0; i < 10; i++) {
             lambda = i + 1;
             lambdas.add(lambda);
             sys = new QueueingSystem(lambda, pH, r21, r22, mu1, mu2H, mu2L);
             sys.run();
-            // TODO: append stats to graphs
+            // add stats for graphs
+            exTheta1Hs.add(sys.exTheta1H);
+            acTheta1Hs.add(sys.acTheta1H);
+            exTheta1Ls.add(sys.exTheta1L);
+            acTheta1Ls.add(sys.acTheta1L);
+            exTheta2Hs.add(sys.exTheta2H);
+            acTheta2Hs.add(sys.acTheta2H);
+            exTheta2Ls.add(sys.exTheta2L);
+            acTheta2Ls.add(sys.acTheta2L);
+            exN1Hs.add(sys.exN1H);
+            acN1Hs.add(sys.acN1H);
+            exN1Ls.add(sys.exN1L);
+            acN1Ls.add(sys.acN1L);
+            exN2Hs.add(sys.exN2H);
+            acN2Hs.add(sys.acN2H);
+            exN2Ls.add(sys.exN2L);
+            acN2Ls.add(sys.acN2L);
+            exT2Hs.add(sys.exT2H);
+            acT2Hs.add(sys.acT2H);
+            exT2Ls.add(sys.exT2L);
+            acT2Ls.add(sys.acT2L);
+            // visualize a simulation
             if (lambda == 10) {
-                bigList.add(sys.acN1H);
-                bigList.add(sys.acN1L);
-                bigList.add(sys.acN2H);
-                bigList.add(sys.acN2L);
+                states.add(sys.simN1Hs);
+                states.add(sys.simN1Ls);
+                states.add(sys.simN2Hs);
+                states.add(sys.simN2Ls);
             }
         }
-        // bigList.add(lambdas);
-        // bigList.add(exY1Hs);
-        // bigList.add(acY1Hs);
-        // bigList.add(exY1Ls);
-        // bigList.add(acY1Ls);
-        // bigList.add(exY2Hs);
-        // bigList.add(acY2Hs);
-        // bigList.add(exY2Ls);
-        // bigList.add(acY2Ls);
-        // bigList.add(exN1Hs);
-        // bigList.add(acN1Hs);
-        // bigList.add(exN1Ls);
-        // bigList.add(acN1Ls);
-        // bigList.add(acY1Ls);
-        // bigList.add(exN2Hs);
-        // bigList.add(acN2Hs);
-        // bigList.add(exN2Ls);
-        // bigList.add(acN2Ls);
-        // bigList.add(exT2Hs);
-        // bigList.add(acT2Hs);
-        // bigList.add(exT2Ls);
-        // bigList.add(acT2Ls);
+        bigList.add(lambdas);
+        bigList.add(exTheta1Hs);
+        bigList.add(acTheta1Hs);
+        bigList.add(exTheta1Ls);
+        bigList.add(acTheta1Ls);
+        bigList.add(exTheta2Hs);
+        bigList.add(acTheta2Hs);
+        bigList.add(exTheta2Ls);
+        bigList.add(acTheta2Ls);
+        bigList.add(exN1Hs);
+        bigList.add(acN1Hs);
+        bigList.add(exN1Ls);
+        bigList.add(acN1Ls);
+        bigList.add(exN2Hs);
+        bigList.add(acN2Hs);
+        bigList.add(exN2Ls);
+        bigList.add(acN2Ls);
+        bigList.add(exT2Hs);
+        bigList.add(acT2Hs);
+        bigList.add(exT2Ls);
+        bigList.add(acT2Ls);
+        // write states to file for python script to plot
+        try (PrintWriter writer = new PrintWriter(new FileWriter("states"))) {
+            for (ArrayList<Float> floats : states) {
+                for (float number : floats) {
+                    writer.print(number + " "); // Separate floats within a list with a space
+                }
+                writer.println(); // one list per line
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         // write results to file for python script to plot
         try (PrintWriter writer = new PrintWriter(new FileWriter("results"))) {
             for (ArrayList<Float> floats : bigList) {
