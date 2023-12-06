@@ -45,13 +45,19 @@ class QueueingSystem {
         // queue 1 expected time = waiting time in queue + service time
         float eTau1H = eTauQ1H + 1 / this.mu1;
         float eTau1L = eTauQ1L + 1 / this.mu1;
+
+        // queue 2 expected waiting times in queue
+        float eS20 = rho2H / this.mu2H + rho2L / this.mu2L;
+        float eTauQ2H = eS20 / (1 - rho2H);
+        float eTauQ2L = (eS20 + rho2H * eTauQ2H) / (1 - rho2H - rho2L);
+        // queue 2 expected time = waiting time in queue + service time
+        this.exT2H = eTauQ2H + 1 / this.mu2H;
+        this.exT2L = eTauQ2L + 1 / this.mu2L;
         
         this.exN1H = this.exTheta1H * eTau1H;
         this.exN1L = this.exTheta1L * eTau1L;
-        this.exN2H = rho2H / (1 - rho2H);
-        this.exN2L = rho2L / (1 - rho2L);
-        this.exT2H = this.exN2H / this.exTheta2H;
-        this.exT2L = this.exN2L / this.exTheta2L;
+        this.exN2H = this.exTheta2H * this.exT2H;
+        this.exN2L = this.exTheta2L * this.exT2L;
     }
 
     void insertEvent(Event e, ArrayList<Event> elist) {
