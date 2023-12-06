@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
 with open('data/states', 'r') as file:
@@ -9,13 +8,13 @@ with open('data/states', 'r') as file:
 points = []
 
 for line in lines:
-    dim = [float(x) for x in line.split()]
-    points.append(dim) # h1, l1, h2, l2
+    row = [float(x) for x in line.split()]
+    points.append(row)
 
-h1 = points[0]
-l1 = points[1]
-h2 = points[2]
-l2 = points[3]
+h1 = [row[0] for row in points]
+l1 = [row[1] for row in points]
+h2 = [row[2] for row in points]
+l2 = [row[3] for row in points]
 
 # Normalize the color values to be within [0.0, 1.0]
 color = (l2 - np.min(l2)) / (np.max(l2) - np.min(l2))
@@ -36,7 +35,7 @@ cbar = plt.colorbar(sc, ax=ax, pad=0.1)
 cbar.set_label('L2')
 
 lines = []
-window_size = 50
+window_size = 100
 
 # Function to initialize the plot
 def init():
@@ -62,7 +61,7 @@ def update(frame):
 
 # Create the animation
 num_frames = len(h1) - 1
-ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, interval=50, blit=False, repeat=False)
+ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, interval=5, blit=False, repeat=False)
 
 # Show the animation
 plt.show()

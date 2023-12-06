@@ -23,20 +23,31 @@ class QueueingSystem {
         this.mu1 = mu1;
         this.mu2H = mu2H;
         this.mu2L = mu2L;
-        this.computeMetrics();
+        this.getMetrics();
     }
 
-    void computeMetrics() {
+    void getMetrics() {
+        // thetas
         this.exTheta1H = this.lambda * this.pH;
         this.exTheta2L = this.lambda * this.pL / this.r2D;
         this.exTheta1L = this.lambda * this.pL + this.exTheta2L * this.r21;
         this.exTheta2H = this.exTheta1H;
+        // rhos
         float rho1H = this.exTheta1H / this.mu1;
         float rho1L = this.exTheta1L / this.mu1;
         float rho2H = this.exTheta2H / this.mu2H;
         float rho2L = this.exTheta2L / this.mu2L;
-        this.exN1H = rho1H / (1 - rho1H);
-        this.exN1L = rho1L / (1 - rho1L);
+        // queue 1 expected waiting times in queue
+        float rho1 = rho1H + rho1L;
+        float eS10 = rho1 / this.mu1;
+        float eTauQ1H = eS10 / (1 - rho1H);
+        float eTauQ1L = (eS10 + rho1H * eTauQ1H) / (1 - rho1);
+        // queue 1 expected time = waiting time in queue + service time
+        float eTau1H = eTauQ1H + 1 / this.mu1;
+        float eTau1L = eTauQ1L + 1 / this.mu1;
+        
+        this.exN1H = this.exTheta1H * eTau1H;
+        this.exN1L = this.exTheta1L * eTau1L;
         this.exN2H = rho2H / (1 - rho2H);
         this.exN2L = rho2L / (1 - rho2L);
         this.exT2H = this.exN2H / this.exTheta2H;
@@ -300,22 +311,26 @@ class QueueingSystem {
         bigList.add(acT2Ls);
         // write states to file for python script to plot
         try (PrintWriter writer = new PrintWriter(new FileWriter("data/states"))) {
-            for (ArrayList<Float> floats : states) {
-                for (float number : floats) {
-                    writer.print(number + " "); // Separate floats within a list with a space
+            int numRows = states.get(0).size();
+            for (int row = 0; row < numRows; row++) {
+                for (ArrayList<Float> floats : states) {
+                    float number = floats.get(row);
+                    writer.print(number + " ");
                 }
-                writer.println(); // one list per line
+                writer.println();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
         // write results to file for python script to plot
         try (PrintWriter writer = new PrintWriter(new FileWriter("data/results"))) {
-            for (ArrayList<Float> floats : bigList) {
-                for (float number : floats) {
-                    writer.print(number + " "); // Separate floats within a list with a space
+            int numRows = bigList.get(0).size();
+            for (int row = 0; row < numRows; row++) {
+                for (ArrayList<Float> floats : bigList) {
+                    float number = floats.get(row);
+                    writer.print(number + " ");
                 }
-                writer.println(); // one list per line
+                writer.println();
             }
         } catch (IOException e) {
             e.printStackTrace();
