@@ -1,3 +1,8 @@
+/*
+ * Nicholas Colvin
+ * nxc220016
+ */
+
 public class Generator {
     // generator params
     static long k = 16807, m = Integer.MAX_VALUE, s0 = 1234;

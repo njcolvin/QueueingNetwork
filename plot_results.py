@@ -1,3 +1,6 @@
+# Nicholas Colvin
+# nxc220016
+
 import matplotlib.pyplot as plt
 
 with open('data/results', 'r') as file:

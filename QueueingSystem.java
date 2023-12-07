@@ -1,3 +1,8 @@
+/*
+ * Nicholas Colvin
+ * nxc220016
+ */
+
 import java.util.ArrayList;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -83,7 +88,7 @@ class QueueingSystem {
 
     void run() {
         int H1 = 0, H2 = 0, L1 = 0, L2 = 0;
-        float clock = 0, rvDepL2;
+        float clock = 0;
         ArrayList<QueueEvent> elist = new ArrayList<QueueEvent>();
         boolean done = false;
         this.simN1Hs = new ArrayList<Integer>();
@@ -99,6 +104,7 @@ class QueueingSystem {
         while (!done) {
             // pop off the event list, update state
             QueueEvent currEvent = elist.remove(0);
+            float prev = clock;
             areaH1 += H1 * (currEvent.time - clock);
             areaL1 += L1 * (currEvent.time - clock);
             areaH2 += H2 * (currEvent.time - clock);
@@ -157,19 +163,17 @@ class QueueingSystem {
                     L2--;
                     serviceNextCust2(H2, L2, clock, elist);
                     // determine destination
-                    rvDepL2 = Generator.getUni();
+                    float rvDepL2 = Generator.getUni();
                     if (rvDepL2 < this.r2D) {
                         // depart system
                         numDepSys++;
                     } else if (rvDepL2 < this.r2D + this.r21) {
                         // transfer to queue1
-                        numArrL1++;
                         L1++;
                         if (H1 == 0 && L1 == 1) // arrival to empty queue1, service
                             insertEvent(new QueueEvent(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
                     } else {
                         // transfer to queue2
-                        numArrL2++;
                         L2++;
                         if (H2 == 0 && L2 == 1) // arrival to empty queue2, service
                             insertEvent(new QueueEvent(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
@@ -186,15 +190,16 @@ class QueueingSystem {
         this.acTheta2H = numDepH2 / clock;
         this.acTheta2L = numDepL2 / clock;
 
-        // E[n] = area / t_end
-        this.acN1H = areaH1 / clock;
-        this.acN1L = areaL1 / clock;
-        this.acN2H = areaH2 / clock;
-        this.acN2L = areaL2 / clock;
-
         // E[𝜏] = area / total # arrs
         this.acT2H = areaH2 / numArrH2;
         this.acT2L = areaL2 / numArrL2;
+
+        // E[n] = area / t_end
+        this.acN1H = areaH1 / clock;
+        this.acN1L = areaL1 / clock;
+        this.acN2H = this.acT2H * this.acTheta2H;
+        this.acN2L = this.acT2L * this.acTheta2L;
+
         printResults();
     }
 

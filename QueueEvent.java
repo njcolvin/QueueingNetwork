@@ -1,3 +1,8 @@
+/*
+ * Nicholas Colvin
+ * nxc220016
+ */
+
 public class QueueEvent {
 
     EventType type;
