@@ -11,7 +11,7 @@ class QueueingSystem {
     float exTheta1H, acTheta1H, exTheta1L, acTheta1L, exTheta2H, acTheta2H, exTheta2L, acTheta2L,
           exN1H, acN1H, exN1L, acN1L, exN2H, acN2H, exN2L, acN2L, exT2H, acT2H, exT2L, acT2L;
     // state vectors
-    ArrayList<Float> simN1Hs, simN1Ls, simN2Hs, simN2Ls;
+    ArrayList<Integer> simN1Hs, simN1Ls, simN2Hs, simN2Ls;
 
     QueueingSystem(float lambda, float pH, float r21, float r22, float mu1, float mu2H, float mu2L) {
         this.lambda = lambda;
@@ -60,55 +60,54 @@ class QueueingSystem {
         this.exN2L = this.exTheta2L * this.exT2L;
     }
 
-    void insertEvent(Event e, ArrayList<Event> elist) {
+    void insertEvent(QueueEvent e, ArrayList<QueueEvent> elist) {
         int i = 0;
         while (i < elist.size() && elist.get(i).time < e.time)
             i++;
         elist.add(i, e);
     }
 
-    void serviceNextCust1(float H1, float L1, float clock, ArrayList<Event> elist) {
+    void serviceNextCust1(float H1, float L1, float clock, ArrayList<QueueEvent> elist) {
         if (H1 > 0)
-            insertEvent(new Event(EventType.DEPH1, clock + Generator.getExp(this.mu1)), elist);
+            insertEvent(new QueueEvent(EventType.DEPH1, clock + Generator.getExp(this.mu1)), elist);
         else if (L1 > 0)
-            insertEvent(new Event(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
+            insertEvent(new QueueEvent(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
     }
 
-    void serviceNextCust2(float H2, float L2, float clock, ArrayList<Event> elist) {
+    void serviceNextCust2(float H2, float L2, float clock, ArrayList<QueueEvent> elist) {
         if (H2 > 0)
-            insertEvent(new Event(EventType.DEPH2, clock + Generator.getExp(this.mu2H)), elist);
+            insertEvent(new QueueEvent(EventType.DEPH2, clock + Generator.getExp(this.mu2H)), elist);
         else if (L2 > 0)
-            insertEvent(new Event(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
+            insertEvent(new QueueEvent(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
     }
 
     void run() {
         int H1 = 0, H2 = 0, L1 = 0, L2 = 0;
         float clock = 0, rvDepL2;
-        ArrayList<Event> elist = new ArrayList<Event>();
+        ArrayList<QueueEvent> elist = new ArrayList<QueueEvent>();
         boolean done = false;
-        this.simN1Hs = new ArrayList<Float>();
-        this.simN1Ls = new ArrayList<Float>();
-        this.simN2Hs = new ArrayList<Float>();
-        this.simN2Ls = new ArrayList<Float>();
-        
+        this.simN1Hs = new ArrayList<Integer>();
+        this.simN1Ls = new ArrayList<Integer>();
+        this.simN2Hs = new ArrayList<Integer>();
+        this.simN2Ls = new ArrayList<Integer>();
 
         int numDepH1 = 0, numDepH2 = 0, numDepL1 = 0, numDepL2 = 0, numDepSys = 0,
             numArrH1 = 0, numArrH2 = 0, numArrL1 = 0, numArrL2 = 0;
         float areaH1 = 0, areaH2 = 0, areaL1 = 0, areaL2 = 0;
         // insert first arrival
-        insertEvent(new Event(EventType.ARR, Generator.getExp(this.lambda)), elist);
+        insertEvent(new QueueEvent(EventType.ARR, Generator.getExp(this.lambda)), elist);
         while (!done) {
             // pop off the event list, update state
-            Event currEvent = elist.remove(0);
+            QueueEvent currEvent = elist.remove(0);
             areaH1 += H1 * (currEvent.time - clock);
             areaL1 += L1 * (currEvent.time - clock);
             areaH2 += H2 * (currEvent.time - clock);
             areaL2 += L2 * (currEvent.time - clock);
             clock = currEvent.time;
-            this.simN1Hs.add((float)H1);
-            this.simN1Ls.add((float)L1);
-            this.simN2Hs.add((float)H2);
-            this.simN2Ls.add((float)L2);
+            this.simN1Hs.add(H1);
+            this.simN1Ls.add(L1);
+            this.simN2Hs.add(H2);
+            this.simN2Ls.add(L2);
             // handle event
             switch (currEvent.type) {
                 case ARR: // arrival to queue 1
@@ -118,16 +117,16 @@ class QueueingSystem {
                         numArrH1++;
                         H1++;
                         if (L1 == 0 && H1 == 1) // arrival to empty queue1, service
-                            insertEvent(new Event(EventType.DEPH1, clock + Generator.getExp(this.mu1)), elist);
+                            insertEvent(new QueueEvent(EventType.DEPH1, clock + Generator.getExp(this.mu1)), elist);
                     } else {
                         // low priority
                         numArrL1++;
                         L1++;
                         if (H1 == 0 && L1 == 1) // arrival to empty queue1, service
-                            insertEvent(new Event(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
+                            insertEvent(new QueueEvent(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
                     }
                     // generate next arrival
-                    insertEvent(new Event(EventType.ARR, clock + Generator.getExp(this.lambda)), elist);
+                    insertEvent(new QueueEvent(EventType.ARR, clock + Generator.getExp(this.lambda)), elist);
                     break;
                 case DEPH1:
                     numDepH1++;
@@ -136,7 +135,7 @@ class QueueingSystem {
                     numArrH2++;
                     H2++;
                     if (L2 == 0 && H2 == 1) // arrival to empty queue2, service
-                        insertEvent(new Event(EventType.DEPH2, clock + Generator.getExp(this.mu2H)), elist);
+                        insertEvent(new QueueEvent(EventType.DEPH2, clock + Generator.getExp(this.mu2H)), elist);
                     break;
                 case DEPL1:
                     numDepL1++;
@@ -145,7 +144,7 @@ class QueueingSystem {
                     numArrL2++;
                     L2++;
                     if (H2 == 0 && L2 == 1) // arrival to empty queue2, service
-                        insertEvent(new Event(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
+                        insertEvent(new QueueEvent(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
                     break;
                 case DEPH2:
                     numDepH2++;
@@ -167,13 +166,13 @@ class QueueingSystem {
                         numArrL1++;
                         L1++;
                         if (H1 == 0 && L1 == 1) // arrival to empty queue1, service
-                            insertEvent(new Event(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
+                            insertEvent(new QueueEvent(EventType.DEPL1, clock + Generator.getExp(this.mu1)), elist);
                     } else {
                         // transfer to queue2
                         numArrL2++;
                         L2++;
                         if (H2 == 0 && L2 == 1) // arrival to empty queue2, service
-                            insertEvent(new Event(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
+                            insertEvent(new QueueEvent(EventType.DEPL2, clock + Generator.getExp(this.mu2L)), elist);
                     }
                     break;
 
@@ -181,7 +180,11 @@ class QueueingSystem {
             if (numDepSys > 500000)
                 done = true;
         }
+        printResults(numDepH1, numDepH2, numDepL1, numDepL2, numArrH2, numArrL2, areaH1, areaH2, areaL1, areaL2, clock);
+    }
 
+    void printResults(int numDepH1, int numDepH2, int numDepL1, int numDepL2, int numArrH2, int numArrL2,
+                      float areaH1, float areaH2, float areaL1, float areaL2, float clock) {
         System.out.println("λ = " + this.lambda);
         // E[θ] = # deps / t_end
         this.acTheta1H = numDepH1 / clock;
@@ -233,94 +236,39 @@ class QueueingSystem {
         mu2H = Float.parseFloat(args[4]);
         mu2L = Float.parseFloat(args[5]);
 
-        QueueingSystem sys;
-        float lambda;
         // for graphs
-        ArrayList<Float> lambdas = new ArrayList<Float>();
-        ArrayList<Float> exTheta1Hs = new ArrayList<Float>();
-        ArrayList<Float> acTheta1Hs = new ArrayList<Float>();
-        ArrayList<Float> exTheta1Ls = new ArrayList<Float>();
-        ArrayList<Float> acTheta1Ls = new ArrayList<Float>();
-        ArrayList<Float> exTheta2Hs = new ArrayList<Float>();
-        ArrayList<Float> acTheta2Hs = new ArrayList<Float>();
-        ArrayList<Float> exTheta2Ls = new ArrayList<Float>();
-        ArrayList<Float> acTheta2Ls = new ArrayList<Float>();
-        ArrayList<Float> exN1Hs = new ArrayList<Float>();
-        ArrayList<Float> acN1Hs = new ArrayList<Float>();
-        ArrayList<Float> exN1Ls = new ArrayList<Float>();
-        ArrayList<Float> acN1Ls = new ArrayList<Float>();
-        ArrayList<Float> exN2Hs = new ArrayList<Float>();
-        ArrayList<Float> acN2Hs = new ArrayList<Float>();
-        ArrayList<Float> exN2Ls = new ArrayList<Float>();
-        ArrayList<Float> acN2Ls = new ArrayList<Float>();
-        ArrayList<Float> exT2Hs = new ArrayList<Float>();
-        ArrayList<Float> acT2Hs = new ArrayList<Float>();
-        ArrayList<Float> exT2Ls = new ArrayList<Float>();
-        ArrayList<Float> acT2Ls = new ArrayList<Float>();
-        
-        ArrayList<ArrayList<Float>> states = new ArrayList<ArrayList<Float>>();
+        ArrayList<ArrayList<Integer>> states = new ArrayList<ArrayList<Integer>>();
         ArrayList<ArrayList<Float>> bigList = new ArrayList<ArrayList<Float>>();
+        String[] metrics = {"Theta1H", "Theta1L", "Theta2H", "Theta2L", "N1H", "N1L", "N2H", "N2L", "T2H", "T2L"};
         for (int i = 0; i < 10; i++) {
-            lambda = i + 1;
-            lambdas.add(lambda);
-            sys = new QueueingSystem(lambda, pH, r21, r22, mu1, mu2H, mu2L);
+            float lambda = i + 1;
+            ArrayList<Float> lambdaStats = new ArrayList<Float>();
+            QueueingSystem sys = new QueueingSystem(lambda, pH, r21, r22, mu1, mu2H, mu2L);
             sys.run();
             // add stats for graphs
-            exTheta1Hs.add(sys.exTheta1H);
-            acTheta1Hs.add(sys.acTheta1H);
-            exTheta1Ls.add(sys.exTheta1L);
-            acTheta1Ls.add(sys.acTheta1L);
-            exTheta2Hs.add(sys.exTheta2H);
-            acTheta2Hs.add(sys.acTheta2H);
-            exTheta2Ls.add(sys.exTheta2L);
-            acTheta2Ls.add(sys.acTheta2L);
-            exN1Hs.add(sys.exN1H);
-            acN1Hs.add(sys.acN1H);
-            exN1Ls.add(sys.exN1L);
-            acN1Ls.add(sys.acN1L);
-            exN2Hs.add(sys.exN2H);
-            acN2Hs.add(sys.acN2H);
-            exN2Ls.add(sys.exN2L);
-            acN2Ls.add(sys.acN2L);
-            exT2Hs.add(sys.exT2H);
-            acT2Hs.add(sys.acT2H);
-            exT2Ls.add(sys.exT2L);
-            acT2Ls.add(sys.acT2L);
-            // visualize a simulation
+            lambdaStats.add(lambda);
+            for (String metric : metrics) {
+                try {
+                    lambdaStats.add((Float) sys.getClass().getDeclaredField("ex" + metric).get(sys));
+                    lambdaStats.add((Float) sys.getClass().getDeclaredField("ac" + metric).get(sys));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            // visualize simulation
             if (lambda == 10) {
                 states.add(sys.simN1Hs);
                 states.add(sys.simN1Ls);
                 states.add(sys.simN2Hs);
                 states.add(sys.simN2Ls);
             }
+            bigList.add(lambdaStats);
         }
-        bigList.add(lambdas);
-        bigList.add(exTheta1Hs);
-        bigList.add(acTheta1Hs);
-        bigList.add(exTheta1Ls);
-        bigList.add(acTheta1Ls);
-        bigList.add(exTheta2Hs);
-        bigList.add(acTheta2Hs);
-        bigList.add(exTheta2Ls);
-        bigList.add(acTheta2Ls);
-        bigList.add(exN1Hs);
-        bigList.add(acN1Hs);
-        bigList.add(exN1Ls);
-        bigList.add(acN1Ls);
-        bigList.add(exN2Hs);
-        bigList.add(acN2Hs);
-        bigList.add(exN2Ls);
-        bigList.add(acN2Ls);
-        bigList.add(exT2Hs);
-        bigList.add(acT2Hs);
-        bigList.add(exT2Ls);
-        bigList.add(acT2Ls);
-        // write states to file for python script to plot
+        // write states and results to files for python scripts to plot
         try (PrintWriter writer = new PrintWriter(new FileWriter("data/states"))) {
-            int numRows = states.get(0).size();
-            for (int row = 0; row < numRows; row++) {
-                for (ArrayList<Float> floats : states) {
-                    float number = floats.get(row);
+            for (int col = 0; col < states.get(0).size(); col++) {
+                for (ArrayList<Integer> row : states) {
+                    int number = row.get(col);
                     writer.print(number + " ");
                 }
                 writer.println();
@@ -328,15 +276,12 @@ class QueueingSystem {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // write results to file for python script to plot
         try (PrintWriter writer = new PrintWriter(new FileWriter("data/results"))) {
-            int numRows = bigList.get(0).size();
-            for (int row = 0; row < numRows; row++) {
-                for (ArrayList<Float> floats : bigList) {
-                    float number = floats.get(row);
-                    writer.print(number + " ");
+            for (ArrayList<Float> floats : bigList) {
+                for (float number : floats) {
+                    writer.print(number + " "); // Separate floats within a list with a space
                 }
-                writer.println();
+                writer.println(); // one list per line
             }
         } catch (IOException e) {
             e.printStackTrace();
