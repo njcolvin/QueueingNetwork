@@ -73,7 +73,7 @@ ax.scatter(lambdas, acT2Hs, label='Actual Time of High Priority Customers in Que
 ax.scatter(lambdas, exT2Ls, label='Expected Time of Low Priority Customers in Queue 2', color='darkred', marker='o')
 ax.scatter(lambdas, acT2Ls, label='Actual Time of Low Priority Customers in Queue 2', color='darkblue', marker='s')
 ax.set_xlabel('λ')
-ax.set_ylabel('E[𝜏_2]')
+ax.set_ylabel('E[T_2]')
 ax.legend()
 
 plt.show()

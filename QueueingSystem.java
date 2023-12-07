@@ -180,17 +180,26 @@ class QueueingSystem {
             if (numDepSys > 500000)
                 done = true;
         }
-        printResults(numDepH1, numDepH2, numDepL1, numDepL2, numArrH2, numArrL2, areaH1, areaH2, areaL1, areaL2, clock);
-    }
-
-    void printResults(int numDepH1, int numDepH2, int numDepL1, int numDepL2, int numArrH2, int numArrL2,
-                      float areaH1, float areaH2, float areaL1, float areaL2, float clock) {
-        System.out.println("λ = " + this.lambda);
         // E[θ] = # deps / t_end
         this.acTheta1H = numDepH1 / clock;
         this.acTheta1L = numDepL1 / clock;
         this.acTheta2H = numDepH2 / clock;
         this.acTheta2L = numDepL2 / clock;
+
+        // E[n] = area / t_end
+        this.acN1H = areaH1 / clock;
+        this.acN1L = areaL1 / clock;
+        this.acN2H = areaH2 / clock;
+        this.acN2L = areaL2 / clock;
+
+        // E[𝜏] = area / total # arrs
+        this.acT2H = areaH2 / numArrH2;
+        this.acT2L = areaL2 / numArrL2;
+        printResults();
+    }
+
+    void printResults() {
+        System.out.println("λ = " + this.lambda);
         System.out.println(" Expected E[θ_H1] = " + this.exTheta1H);
         System.out.println(" Actual E[θ_H1]   = " + this.acTheta1H);
         System.out.println(" Expected E[θ_L1] = " + this.exTheta1L);
@@ -199,12 +208,6 @@ class QueueingSystem {
         System.out.println(" Actual E[θ_H2]   = " + this.acTheta2H);
         System.out.println(" Expected E[θ_L2] = " + this.exTheta2L);
         System.out.println(" Actual E[θ_L2]   = " + this.acTheta2L);
-
-        // E[n] = area / t_end
-        this.acN1H = areaH1 / clock;
-        this.acN1L = areaL1 / clock;
-        this.acN2H = areaH2 / clock;
-        this.acN2L = areaL2 / clock;
         System.out.println(" Expected E[N_H1] = " + this.exN1H);
         System.out.println(" Actual E[N_H1]   = " + this.acN1H);
         System.out.println(" Expected E[N_L1] = " + this.exN1L);
@@ -213,10 +216,6 @@ class QueueingSystem {
         System.out.println(" Actual E[N_H2]   = " + this.acN2H);
         System.out.println(" Expected E[N_L2] = " + this.exN2L);
         System.out.println(" Actual E[N_L2]   = " + this.acN2L);
-
-        // E[𝜏] = area / total # arrs
-        this.acT2H = areaH2 / numArrH2;
-        this.acT2L = areaL2 / numArrL2;
         System.out.println(" Expected E[𝜏_H2] = " + this.exT2H);
         System.out.println(" Actual E[𝜏_H2]   = " + this.acT2H);
         System.out.println(" Expected E[𝜏_L2] = " + this.exT2L);
